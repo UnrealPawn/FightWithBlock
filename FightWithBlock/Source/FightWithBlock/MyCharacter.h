@@ -20,6 +20,10 @@ public:
 	// Sets default values for this character's properties
 	AMyCharacter();
 
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+		bool AllowMove = true;
+
 	UFUNCTION(reliable, Client, WithValidation, BlueprintCallable)
 		void ClientSetAllowInput(bool Choose);
 	UFUNCTION(BlueprintImplementableEvent)
@@ -34,14 +38,17 @@ public:
 	void RefreshLifeBar();
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Replicated)
-		FName HeroName;
-	UFUNCTION(reliable, server, WithValidation)
-		void ServerSetName(FName Name_);
-	UFUNCTION(BlueprintCallable)
-		void SetName(FName Name_);
+		FName CharacterName;
+	//UFUNCTION(reliable, server, WithValidation)
+	//	void ServerSetName(FName Name_);
+	//UFUNCTION(BlueprintCallable)
+	//	void SetName(FName Name_);
 
-	UPROPERTY(VisibleAnywhere, Replicated)
-		class UCameraComponent* Camera;
+	UPROPERTY(VisibleAnywhere, BlueprintReadWrite)
+		class USpringArmComponent* CameraBoom;
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Replicated)
+		class UCameraComponent* MyCamera;
 
 	UPROPERTY(VisibleAnywhere)
 		class USkeletalMeshComponent* FPSMesh;
@@ -92,15 +99,16 @@ public:
 			void ChooseLifeBar(float percent);
 		UFUNCTION(BlueprintImplementableEvent)
 			void PrintRole();
+
+		UFUNCTION(BlueprintImplementableEvent)
+			void BlueprintMineBlock();
+
 protected:
 	// Called when the game starts or when spawned
 
 
 	virtual void BeginPlay() override;
 
-	void MoveForward(float val);
-
-	void MoveRight(float val);
 
 public:	
 	// Called every frame
@@ -110,6 +118,11 @@ public:
 	virtual void SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent) override;
 
 	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps)const override;
+
+	UFUNCTION(reliable, Server, WithValidation, BlueprintCallable)
+		void ServerSetSpeed(float Speed);
+	UFUNCTION(reliable, NetMulticast, WithValidation)
+		void MulticastSetSpeed(float Speed);
 
 	bool AddItem(FBlock Item);
 
@@ -131,10 +144,20 @@ public:
 	UFUNCTION(reliable, server, WithValidation)
 		void  ServerChooseItem_3();
 
-	void Fire_();
+	UFUNCTION(BlueprintImplementableEvent)
+		void BlueprintFire();
+	UFUNCTION(BlueprintCallable)
+		void Fire_();
 	void Fire();
 	UFUNCTION(reliable, server, WithValidation)
 		void ServerFire();
+	UFUNCTION(reliable, NetMulticast, WithValidation)
+		void MulticastFire();
+
+	UFUNCTION(reliable, NetMulticast, WithValidation, BlueprintCallable)
+		void MulticastSpawnEmitter(UParticleSystem* Particle, FVector Location);
+	UFUNCTION(reliable, NetMulticast, WithValidation, BlueprintCallable)
+		void MulticastPlayAudio(USoundBase* Sound, FVector Location);
 
 	void SetCameraRotation(FRotator Rotation);
 	void SetCamera();
@@ -147,6 +170,13 @@ public:
 		void ShakeCamera();
 
 	FItem* handBlock;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Particle")
+		UParticleSystem* Hit1;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Particle")
+		UParticleSystem* Hit2;
+	UFUNCTION(BlueprintImplementableEvent)
+		void BlueprintSpawmEmitter();
 
 	void AddBUFF(FBUFF BUFF);
 	void RunBUFF(float DeltaTime);
@@ -164,6 +194,9 @@ public:
 	UFUNCTION(reliable, server, WithValidation)
 		void ServerPressed_R();
 
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+		bool isAuth = false;
+
 
 	void Released_R();
 	void PrintItem(FBlock BlockProperty);
@@ -172,8 +205,11 @@ public:
 	void MineBlock();
 	UFUNCTION(reliable, server, WithValidation)
 		void ServerMineBlock();
+	UFUNCTION(reliable, NetMulticast, WithValidation)
+		void MulticastMineBlock();
 
-	void MineLineTraceResult(const FHitResult& Hit);
+	UFUNCTION(BlueprintCallable)
+		void MineLineTraceResult(const FHitResult& Hit);
 	
 	void ApplyPointDamage_(AMyCharacter* Causer, int32 DamageValue);
 	void ApplyPointDamage(AMyCharacter* Causer, int32 DamageValue);
@@ -198,6 +234,7 @@ public:
 		bool IsCampFull = true;
 
 	void ControllerInit(ECamp Camp, FString Name);
+
 
 private:
 
